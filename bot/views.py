@@ -376,8 +376,7 @@ def payment_view(request, booking_id):
 
 def send_ticket_via_whatsapp(ticket,user_whatsapp_number):
     # Use your Twilio Account SID and Auth Token
-    account_sid = 'AC54864ecd02d827663926bf6d9a87fdc1'
-    auth_token = 'e4b5e43443bcf2287cff9dabe4adbf7f'
+    # 
     client = Client(account_sid, auth_token)
 
     # Send the ticket to the user (replace with actual user WhatsApp number)

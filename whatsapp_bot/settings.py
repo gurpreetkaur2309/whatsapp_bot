@@ -31,9 +31,7 @@ DEBUG = True
 #     '*']
 ALLOWED_HOSTS = ['*','http://192.168.14.252:8000/']
 
-TWILIO_ACCOUNT_SID = "AC54864ecd02d827663926bf6d9a87fdc1"
-TWILIO_AUTH_TOKEN = "e4b5e43443bcf2287cff9dabe4adbf7f"
-TWILIO_WHATSAPP_NUMBER = "whatsapp:+12185035494"  # Twilio Sandbox number
+ # Twilio Sandbox number
 
 # Application definition
 STATIC_URL = '/static/'
