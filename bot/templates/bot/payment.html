@@ -1,0 +1,49 @@
+{% extends 'bot/index.html' %}
+{% csrf_token%}
+
+    {% block content %}
+    <div class="container mt-5">
+
+        <div class="card">
+    
+            <div class="card-header text-center">
+    
+                <h4>Your Ticket Details</h4>
+    
+            </div>
+    
+            <div class="card-body">
+    
+                <h5 class="card-title">Booking Confirmation</h5>
+    
+                <p class="card-text"><strong>Username: {{ username }}</strong></p>
+    
+                <p class="card-text"><strong>Source:</strong> {{ source }}</p>
+    
+                <p class="card-text"><strong>Destination:</strong> {{ destination }}</p>
+    
+                <p class="card-text"><strong>Booking ID:</strong> {{ booking_id }}</p>
+    
+                <p class="card-text"><strong>Date and Time:</strong> {{ current_time }}</p>
+    
+                <p class="card-text"><strong>WhatsApp Number:</strong> {{ whatsapp_number }}</p>
+    
+            </div>
+    
+            <div class="card-footer text-muted text-center">
+    
+                Thank you for choosing AITS Indore!
+    
+            </div>
+    
+        </div>
+        <form action="{% url 'logout' %}" method="post" style="display: inline;">
+
+            {% csrf_token %}
+        
+            <button type="submit" class="btn btn-danger">Logout</button>
+        
+        </form>
+    
+    </div>
+	{% endblock %}

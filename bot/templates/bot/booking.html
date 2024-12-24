@@ -1,0 +1,154 @@
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Book Your Ticket</title>
+</head>
+<body>
+    <h1>Book Your Ticket</h1> -->
+    {% extends 'bot/index.html' %}
+    {% block content %}
+    <!-- <div class="container mt-5">
+        <h2 class="text-center">Booking Form</h2>
+        
+            <div class="form-group">
+                <label for="source">Source</label>
+                <input type="text" class="form-control" id="source" placeholder="Enter source location" required autocomplete="off">
+                <div id="source-suggestions" class="list-group" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="destination">Destination</label>
+                <input type="text" class="form-control" id="destination" placeholder="Enter destination location" required autocomplete="off">
+                <div id="destination-suggestions" class="list-group" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="ticket-number">Number of Tickets</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-secondary" type="button" id="decrease">-</button>
+                    </div>
+                    <input type="number" class="form-control" id="ticket-number" value="1" min="1" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="increase">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+
+                <label for="route-price">Price per Ticket</label>
+    
+                <input type="text" class="form-control" id="route-price"  readonly>
+    
+            </div>
+    
+            <div class="form-group">
+    
+                <label for="total-price">Total Price</label>
+    
+                <input type="text" class="form-control" id="total-price"  readonly>
+    
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Book Now</button>
+        </form>
+    </div> -->
+    <!-- <div class="container mt-5">
+        <h2 class="text-center">Booking Form</h2>
+        <form method="post" action="{% url 'booking' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="source">Source</label>
+                <input type="text" class="form-control" id="source" placeholder="Enter source location" required autocomplete="off">
+                <div id="source-suggestions" class="list-group" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="destination">Destination</label>
+                <input type="text" class="form-control" id="destination" placeholder="Enter destination location" required autocomplete="off">
+                <div id="destination-suggestions" class="list-group" style="display: none;"></div>
+            </div>
+            <div class="form-group">
+                <label for="ticket-number">Number of Tickets</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-secondary" type="button" id="decrease">-</button>
+                    </div>
+                    <input type="number" class="form-control" id="ticket-number" name="ticket_count" value="1" min="1" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="increase">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="route-price">Price per Ticket</label>
+                <input type="text ```html
+                " class="form-control" id="route-price" readonly>
+            </div>
+            <div class="form-group">
+                <label for="total-price">Total Price</label>
+                <input type="text" class="form-control" id="total-price" readonly>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Book Now</button>
+        </form>
+    </div> -->
+    <div class="container mt-5">
+        <h2 class="text-center">Booking Form</h2>
+        <form method="post" action="{% url 'booking' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_route">Route:</label>
+                <select name="route" id="id_route" required>
+                    <option value="" selected>---------</option>
+                    {% for route in form.route.field.queryset %}
+                        <option value="{{ route.id }}" data-price="{{ route.base_price }}">{{ route }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.route.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.route.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="ticket-number">Number of Tickets</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-outline-secondary" type="button" id="decrease">-</button>
+                    </div>
+                    <input type="number" class="form-control" id="ticket-number" name="ticket_count" value="1" min="1" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" id="increase">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+
+                <label for="whatsapp-number">WhatsApp Number</label>
+    
+                <input type="text" class="form-control" id="whatsapp-number" name="whatsapp_number" placeholder="Enter your WhatsApp number" required>
+    
+            </div>
+            <div class="form-group">
+                <label for="route-price">Price per Ticket</label>
+                <input type="text" class="form-control" id="route-price" value={}readonly>
+            </div>
+            <div class="form-group">
+                <label for="total-price">Total Price</label>
+                <input type="text" class="form-control" id="total-price" readonly>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Book Now</button>
+        </form>
+    </div>
+    {% endblock %}
+
+    <!-- Bootstrap JS and dependencies -->
+   
+    
+
+    <!-- <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html> -->
