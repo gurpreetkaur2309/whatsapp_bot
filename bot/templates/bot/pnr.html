@@ -1,0 +1,32 @@
+{% extends "bot/base.html" %}
+{% block title %}Find a ticket — Indore iBus{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:520px">
+  <h1 class="h3 mb-4">Find a ticket</h1>
+  <form method="get" class="card border-0 shadow-sm p-4 mb-4">
+    <label for="{{ form.pnr.id_for_label }}" class="form-label">PNR</label>
+    <div class="input-group">
+      {{ form.pnr }}
+      <button class="btn btn-ib">Find</button>
+    </div>
+    {% if form.pnr.errors %}<div class="text-danger small mt-2">{{ form.pnr.errors.0 }}</div>{% endif %}
+  </form>
+
+  {% if booking %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-2">
+          <span class="h5 mb-0">{{ booking.pnr }}</span>
+          <span class="badge {% if booking.status == 'CONFIRMED' %}text-bg-success{% else %}text-bg-secondary{% endif %}">
+            {{ booking.get_status_display }}
+          </span>
+        </div>
+        <p class="mb-1">{{ booking.origin.name }} → {{ booking.destination.name }}</p>
+        <p class="text-muted small mb-3">{{ booking.board_at|date:"D d M Y, g:i A" }} · {{ booking.seat_count }} ticket(s) · ₹{{ booking.total_fare|floatformat:0 }}</p>
+        <a href="{% url 'ticket' booking.pnr %}" class="btn btn-sm btn-ib">View full ticket</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

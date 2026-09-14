@@ -1,0 +1,35 @@
+{% extends "bot/base.html" %}
+{% block title %}Routes — Indore iBus{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h1 class="h3 mb-4">Routes &amp; stops</h1>
+  <div class="accordion" id="routeList">
+    {% for route in routes %}
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#route{{ route.id }}" aria-expanded="false" aria-controls="route{{ route.id }}">
+            <span class="badge {% if route.kind == 'BRTS' %}text-bg-success{% else %}text-bg-secondary{% endif %} me-2">
+              {{ route.code }}
+            </span>
+            {{ route.name }}
+          </button>
+        </h2>
+        <div id="route{{ route.id }}" class="accordion-collapse collapse" data-bs-parent="#routeList">
+          <div class="accordion-body">
+            <ol class="list-group list-group-numbered list-group-flush">
+              {% for rs in route.route_stops.all %}
+                <li class="list-group-item d-flex justify-content-between px-0">
+                  <span>{{ rs.stop.name }}</span>
+                  <span class="text-muted small">{{ rs.distance_from_origin }} km · +{{ rs.offset_minutes }} min</span>
+                </li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

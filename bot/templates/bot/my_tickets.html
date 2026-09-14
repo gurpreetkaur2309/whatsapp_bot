@@ -1,0 +1,58 @@
+{% extends "bot/base.html" %}
+{% block title %}My tickets — Indore iBus{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h1 class="h3 mb-4">My tickets</h1>
+
+  {% if not bookings %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <p class="text-muted mb-3">You haven't booked any tickets yet.</p>
+        <a href="{% url 'search' %}" class="btn btn-ib">Book your first ticket</a>
+      </div>
+    </div>
+  {% else %}
+    <div class="table-responsive card border-0 shadow-sm">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>PNR</th><th>Journey</th><th>Departs</th>
+            <th class="text-center">Seats</th><th class="text-end">Fare</th>
+            <th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in bookings %}
+            <tr>
+              <td><a href="{% url 'ticket' booking.pnr %}" class="fw-semibold">{{ booking.pnr }}</a></td>
+              <td>{{ booking.origin.name }} → {{ booking.destination.name }}</td>
+              <td class="small">{{ booking.board_at|date:"d M, g:i A" }}</td>
+              <td class="text-center">{{ booking.seat_count }}</td>
+              <td class="text-end">₹{{ booking.total_fare|floatformat:0 }}</td>
+              <td>
+                {% if booking.status == 'CONFIRMED' %}
+                  <span class="badge text-bg-success">Confirmed</span>
+                {% elif booking.status == 'CANCELLED' %}
+                  <span class="badge text-bg-danger">Cancelled</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">{{ booking.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if booking.is_active %}
+                  <form method="post" action="{% url 'cancel_ticket' booking.pnr %}"
+                        onsubmit="return confirm('Cancel ticket {{ booking.pnr }}?');">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

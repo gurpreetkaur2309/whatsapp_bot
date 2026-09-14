@@ -1,20 +1,25 @@
+from django.contrib.auth import views as auth_views
 from django.urls import path
-from . import views
-from django.contrib.auth.views import LogoutView
+
+from bot import views
+from bot.webhooks.twilio import whatsapp_webhook
 
 urlpatterns = [
-    path("whatsapp-bot/", views.whatsapp_bot, name="whatsapp_bot"),
-    path('register/', views.register, name='register'),
+    path("", views.home, name="home"),
+    path("search/", views.search, name="search"),
+    path("checkout/", views.checkout, name="checkout"),
+    path("routes/", views.routes, name="routes"),
 
-    # User Login
-    path('login/', views.login_view, name='login'),
+    path("ticket/<str:pnr>/", views.ticket, name="ticket"),
+    path("ticket/<str:pnr>/qr.png", views.ticket_qr, name="ticket_qr"),
+    path("ticket/<str:pnr>/cancel/", views.cancel_ticket, name="cancel_ticket"),
+    path("pnr/", views.pnr_lookup, name="pnr_lookup"),
+    path("my-tickets/", views.my_tickets, name="my_tickets"),
 
-    # Booking page (source and destination)
-    path('booking/', views.booking_view, name='booking'),
-    path('', views.index, name='index'),
-    # Payment page and ticket generation
-    path('logout/', LogoutView.as_view(next_page='index'), name='logout'), 
-   
-    path('payment/<int:booking_id>/', views.payment_view, name='payment_view'),  # Updated to accept booking_id
+    path("register/", views.register, name="register"),
+    path("login/", auth_views.LoginView.as_view(template_name="bot/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 
+    # Twilio posts here. CSRF-exempt, but signature-validated.
+    path("webhook/whatsapp/", whatsapp_webhook, name="whatsapp_webhook"),
 ]

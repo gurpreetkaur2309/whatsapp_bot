@@ -1,0 +1,65 @@
+{% extends "bot/base.html" %}
+{% block title %}Confirm booking — Indore iBus{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:640px">
+  <h1 class="h3 mb-4">Confirm your booking</h1>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      {% if option %}
+        <div class="d-flex justify-content-between border-bottom pb-3 mb-3">
+          <div>
+            <div class="h5 mb-1">{{ origin.name }} → {{ destination.name }}</div>
+            <div class="small text-muted">
+              {{ option.board_at|date:"D d M Y, g:i A" }} · {{ option.trip.route.code }}
+              · {{ option.distance_km }} km
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="h4 text-ib mb-0">₹{{ option.fare_per_seat|floatformat:0 }}</div>
+            <div class="small text-muted">per ticket</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="h5 mb-3">{{ origin.name }} → {{ destination.name }}</div>
+      {% endif %}
+
+      <form method="post" action="{% url 'checkout' %}">
+        {% csrf_token %}
+        <input type="hidden" name="trip_id" value="{{ trip_id }}">
+        <input type="hidden" name="origin" value="{{ origin.id }}">
+        <input type="hidden" name="destination" value="{{ destination.id }}">
+
+        <div class="mb-3">
+          <label for="id_passenger_name" class="form-label">Passenger name</label>
+          <input type="text" name="passenger_name" id="id_passenger_name" class="form-control" required
+                 value="{{ form.passenger_name.value|default:'' }}">
+        </div>
+        <div class="mb-3">
+          <label for="id_whatsapp_number" class="form-label">WhatsApp number</label>
+          <input type="text" name="whatsapp_number" id="id_whatsapp_number" class="form-control" required
+                 placeholder="+919876543210" value="{{ form.whatsapp_number.value|default:'' }}">
+          <div class="form-text">Your ticket is linked to this number.</div>
+        </div>
+        <div class="mb-4">
+          <label for="id_seats" class="form-label">Tickets</label>
+          <input type="number" name="seats" id="id_seats" class="form-control" min="1" max="6"
+                 value="{{ seats|default:1 }}" style="max-width:8rem">
+        </div>
+
+        {% if option %}
+          <div class="alert alert-light border d-flex justify-content-between">
+            <span>Total</span>
+            <strong class="text-ib">₹{{ option.fare_per_seat|floatformat:0 }} × {{ seats }}</strong>
+          </div>
+        {% endif %}
+
+        <input type="hidden" name="confirm" value="1">
+        <button class="btn btn-ib btn-lg w-100">Confirm &amp; book</button>
+      </form>
+    </div>
+  </div>
+  <p class="text-center mt-3"><a href="{% url 'search' %}">← Back to search</a></p>
+</div>
+{% endblock %}

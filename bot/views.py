@@ -1,457 +1,287 @@
-from django.shortcuts import render
+"""Website views.
 
-# Create your views here.
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.contrib.auth.models import User
+Thin by design: every one of these calls the same services the bot and the API
+use, so fare and seat logic exists in exactly one place.
+"""
+
+import datetime as dt
+import io
+
 from django.contrib import messages
-from django.http import HttpResponse
-from twilio.twiml.messaging_response import MessagingResponse
-from .forms import BookingForm 
-from twilio.rest import Client
-from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.utils.timezone import now
-from bot.models import Booking
-from django.http import HttpResponse
-from django.utils.timezone import now
-from .models import Booking
-# @csrf_exempt  # Disable CSRF for this view
-
-# def twilio_webhook(request):
-
-#     if request.method == 'POST':
-
-#         # Get the incoming message and sender's WhatsApp number
-
-#         incoming_msg = request.POST.get('Body', '').strip().lower()
-
-        
-
-
-#         # Create a Twilio response object
-
-#         response = MessagingResponse()
-
-
-#         # Check the incoming message and respond accordingly
-
-#         if incoming_msg == 'hello':
-
-#             response.message("Hello dear, welcome to AITS Indore!")
-
-#         elif incoming_msg == 'booking our ticket':
-
-#             response.message("To book your ticket, please visit: http://127.0.0.1:8000/bot/register")
-
-#         elif incoming_msg == 'book your ticket':
-
-#             # Fetch the WhatsApp number from the request
-
-#               # Clean the number
-
-
-#             # Check if the user has an entry in the Booking table
-
-#             try:
-
-#                 booking = Booking.objects.get(whatsapp_number=whatsapp_number)
-
-#                 response.message(f"Your ticket is confirmed! Booking ID: {booking.id}")
-
-#             except Booking.DoesNotExist:
-
-#                 response.message("No booking found for this number. Please make a booking first.")
-
-
-#         else:
-
-#             response.message("Sorry, I didn't understand that. Please type 'hello' or 'booking our ticket'.")
-
-
-#         return JsonResponse(str(response), safe=False)  # Return the Twilio response
-
-
-#     return JsonResponse({'error': 'Invalid request'}, status=400)
-@csrf_exempt
-def whatsapp_bot(request):
-    if request.method == "POST":
-        from_number = request.POST.get('From', '')
-        incoming_message = request.POST.get('Body', '').strip().lower()
-        greetings = ['hello', 'hii', 'hi', 'hy', 'hye']
-        # Start of conversation
-        response = MessagingResponse()
-
-        if incoming_message in greetings:
-            # Greeting message and options
-            response.message(" 😃😃 Hello! Welcome to iBus Services 🚌. Visit our website to get started:\n  link is below 🔗 /n http://127.0.0.1:8000/bot/register")
-            response.message(" Here are your options:\n1. Book my Ticket 🎟️ \n2. show my ticket 🎟️ \n3. Recently visited routes 📍")
-        
-        elif "book my ticket" in incoming_message or "1" in incoming_message: 
-            # Redirect to iBus booking page (this would be your website URL)
-            
-            response.message("To book your ticket, please visit: 😃 \n http://127.0.0.1:8000/bot/booking")
-        
-        elif "show my ticket" in incoming_message or "2" in incoming_message:
-            # Provide information about nearby stations (to be defined on your website)
-            
-            
-            try:
-                whatsapp_number = from_number.replace('whatsapp:', '')
-                bookings = Booking.objects.filter(whatsapp_number=whatsapp_number).order_by('-created_at')
-                print(bookings)
-                booking=bookings.first()
-                
-
-                # Fetch user details
-
-                username = booking.user.username
-
-                route = booking.route
-
-                ticket_count = booking.ticket_count
-
-                created_at = booking.created_at.strftime("%Y-%m-%d %H:%M:%S")  # Format date and time
-
-
-                # Create a detailed response message
-
-                response.message(
-
-                    f"Thank you for visiting AITS Indore 😃, {username}!\n"
-
-                    f"Your ticket 🎟️ is confirmed!\n"
-
-                    f"Booking ID: {booking.id}\n"
-
-                    f"Route 📍: {route.source} to {route.destination}\n"
-
-                    f"Ticket Count 🎟️: {ticket_count}\n"
-
-                    f"Date and Time 📅: {created_at}\n"
-
-                    f"Total Price 💸: {booking.total_price:.2f} INR"
-
-                )
-
-            except Booking.DoesNotExist:
-
-                response.message("No booking found for this number. Please make a booking first.")
-        elif "recently visited routes" in incoming_message or "3" in incoming_message:
-            try:
-                whatsapp_number = from_number.replace('whatsapp:', '')
-                bookings = Booking.objects.filter(whatsapp_number=whatsapp_number).order_by('-created_at')
-                print(bookings)
-                booking=bookings.first()
-                second_booking = bookings[1]  # Second element (index starts at 0)
-                third_booking = bookings[2]
-                route1 = booking.route
-                route2=second_booking.route
-                route3=third_booking.route
-                response.message(
-
-                    f"Route 📍: {route1.source} to {route1.destination}\n"
-                    f"Route 📍: {route2.source} to {route2.destination}\n"
-                    f"Route 📍: {route3.source} to {route3.destination}\n"
-
-                )
-            except Booking.DoesNotExist:
-
-                response.message("No booking found for this number. Please make a booking first.")
-            
-        else:
-            
-            # Handle invalid input
-            response.message("Sorry, I didn't understand that. Please choose one of the options: 'Book Your Ticket', or 'More Options'.")
-
-        return HttpResponse(str(response), content_type="application/xml")
-    else:
-        return HttpResponse("Invalid request method", status=405)
-
- # Assuming you've created a form for booking
-@csrf_exempt
-# def booking_view(request):
-    # if request.method == 'POST':
-    #     form = BookingForm(request.POST)
-    #     if form.is_valid():
-    #         # Process the form (this would save data to the database, like user details, source, and destination)
-    #         source = form.cleaned_data['source']
-    #         destination = form.cleaned_data['destination']
-
-    #         # After registration, user will proceed to payment page
-    #         return HttpResponse(f"Booking details saved! You are traveling from {source} to {destination}. Proceed to payment.")
-    #     else:
-    #         return HttpResponse("Invalid form data", status=400)
-    
-    # # If GET request, show the booking form
-    # else:
-    #     form = BookingForm()
-    #     return render(request, 'bot/booking.html')
-    # if request.method == 'POST':
-
-    #     form = BookingForm(request.POST)
-
-    #     if form.is_valid():
-
-    #         booking = form.save(commit=False)
-
-    #         booking.user = request.user  # Set the user to the currently logged-in user
-
-    #         booking.save()
-
-    #         return redirect('payment_view')  # Redirect to the payment view
-
-    # else:
-
-    #     form = BookingForm()
-
-    
-
-    # return render(request, 'bot/booking.html')
-    # views.py
-
-# @csrf_exempt
-# def booking_view(request):
-#     if request.method == 'POST':
-#         form = BookingForm(request.POST)
-#         if form.is_valid():
-#             print("form valid hai")
-#             booking = form.save(commit=False)
-#             booking.user = request.user  # Set the user to the currently logged-in user
-#             booking.save()  # This will trigger the save method in the Booking model
-#             # return redirect('payment_view')  
-#             # # Redirect to the payment view
-#             return render(request, 'bot/payment.html', {'form': form})
-#     else:
-#         form = BookingForm()
-    
-#     return render(request, 'bot/booking.html', {'form': form})
-@csrf_exempt
-
-def booking_view(request):
-
-    print(request)
-
-    if request.method == 'POST':
-
-        form = BookingForm(request.POST)
-
-        print(form)
-
-        if form.is_valid():
-
-            print("valid")
-
-            booking = form.save(commit=False)
-
-            booking.user = request.user  # Set the user to the currently logged-in user
-
-            booking.save()  # Save the booking to the database
-
-
-            # Redirect to the payment view with the booking ID
-
-            return redirect('payment_view', booking_id=booking.id)
-
-
-    else:
-
-        form = BookingForm()
-
-
-    return render(request, 'bot/booking.html', {'form': form})
-from django.shortcuts import render
-
-def index(request):
-    return render(request, 'bot/index.html')  # Adjust the template name as needed
-    
-    # if request.method == "POST":
-    #     # Extract incoming message
-    #     incoming_message = request.POST.get('Body', '')
-
-    #     # Create a Twilio MessagingResponse object
-    #     response = MessagingResponse()
-    #     response.message(f"Hi there! You said: {incoming_message}")
-
-    #     # Return the response in XML format
-    #     return HttpResponse(str(response), content_type="application/xml")
-    # else:
-    #     return HttpResponse("Invalid request method", status=405)
-
-# def payment_view(request):
-#     # Fetch the logged-in user's username
-#     print(request)
-#     username = request.user.username
-
-#     # Fetch the latest booking details for the logged-in user
-#     try:
-#         booking = Booking.objects.filter(user=request.user).latest('created_at')  # Assuming 'created_at' field exists
-#         source = booking.source
-#         destination = booking.destination
-#         booking_id = booking.iddef payment_view(request):
-    # Fetch the logged-in user's username
-    username = request.user.username
-    
-    # Fetch the latest booking details for the logged-in user
-    try:
-        booking = Booking.objects.filter(user=request.user).latest('created_at')  # Assuming 'created_at' field exists
-        source = booking.route.source  # Accessing the source from the related Route
-        destination = booking.route.destination  # Accessing the destination from the related Route
-        booking_id = booking.id
-        print(booking)
-    except Booking.DoesNotExist:
-        return HttpResponse("No booking found. Please book a ticket first.")
-
-    # Generate the ticket with the current date and time
-    current_time = now().strftime("%Y-%m-%d %H:%M:%S")
-    ticket = (
-        f"Your Ticket:\n"
-        f"Username: {username}\n"
-        f"Source: {source}\n"
-        f"Destination: {destination}\n"
-        f"Booking ID: {booking_id}\n"
-        f"Date and Time: {current_time}"
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
+from bot.forms import CheckoutForm, PNRLookupForm, RegisterForm, SearchForm
+from bot.models import Booking, Route, Stop
+from bot.services import booking as booking_service
+from bot.services import network
+from bot.services.fares import fare_for_km
+
+
+def home(request):
+    return render(
+        request,
+        "bot/home.html",
+        {
+            "stop_count": Stop.objects.filter(is_active=True).count(),
+            "route_count": Route.objects.filter(is_active=True).count(),
+            "today": timezone.localdate(),
+        },
     )
 
-    # Send the ticket to WhatsApp via Twilio
-    send_ticket_via_whatsapp(ticket)
 
-    return HttpResponse(f"Payment complete! Your ticket:\n\n{ticket}")
-#     except Booking.DoesNotExist:
-#         return HttpResponse("No booking found. Please book a ticket first.")
+def search(request):
+    """Pick two stops and a date; list bookable departures."""
+    stops = Stop.objects.filter(is_active=True).order_by("name")
+    context = {"stops": stops, "today": timezone.localdate()}
 
-#     # Generate the ticket with the current date and time
-#     current_time = now().strftime("%Y-%m-%d %H:%M:%S")
-#     ticket = (
-#         f"Your Ticket:\n"
-#         f"Username: {username}\n"
-#         f"Source: {source}\n"
-#         f"Destination: {destination}\n"
-#         f"Booking ID: {booking_id}\n"
-#         f"Date and Time: {current_time}"
-#     )
+    origin_id = request.GET.get("origin")
+    destination_id = request.GET.get("destination")
+    if not (origin_id and destination_id):
+        return render(request, "bot/search.html", context)
 
-#     # Send the ticket to WhatsApp via Twilio
-#     send_ticket_via_whatsapp(ticket)
+    form = SearchForm(
+        {
+            "origin": origin_id,
+            "destination": destination_id,
+            "service_date": request.GET.get("date") or timezone.localdate().isoformat(),
+            "seats": request.GET.get("seats") or 1,
+        }
+    )
+    if not form.is_valid():
+        for error in form.errors.values():
+            messages.error(request, error[0])
+        return render(request, "bot/search.html", context)
 
-#     return HttpResponse(f"Payment complete! Your ticket:\n\n{ticket}")
-@csrf_exempt  
+    data = form.cleaned_data
+    origin = Stop.objects.filter(pk=data["origin"]).first()
+    destination = Stop.objects.filter(pk=data["destination"]).first()
+    if not (origin and destination):
+        messages.error(request, "Unknown stop selected.")
+        return render(request, "bot/search.html", context)
+
+    options = network.search_trips(
+        origin.id, destination.id, data["service_date"], seats=data["seats"], limit=20
+    )
+    km = network.distance_between(origin.id, destination.id)
+
+    context.update(
+        {
+            "searched": True,
+            "origin": origin,
+            "destination": destination,
+            "service_date": data["service_date"],
+            "seats": data["seats"],
+            "options": options,
+            "distance_km": km,
+            "fare": fare_for_km(km) if km is not None else None,
+            "no_route": km is None,
+            "suggestions": network.connected_stops(origin.id) if km is None else [],
+        }
+    )
+    return render(request, "bot/search.html", context)
+
+
+def checkout(request):
+    """Confirm a chosen departure and issue the ticket."""
+    if request.method != "POST":
+        return redirect("search")
+
+    form = CheckoutForm(request.POST)
+    if not form.is_valid():
+        # Re-render the confirmation rather than bouncing the user to the start.
+        trip_id = request.POST.get("trip_id")
+        origin = Stop.objects.filter(pk=request.POST.get("origin")).first()
+        destination = Stop.objects.filter(pk=request.POST.get("destination")).first()
+        for error in form.errors.values():
+            messages.error(request, error[0])
+        return render(
+            request,
+            "bot/checkout.html",
+            {
+                "form": form,
+                "origin": origin,
+                "destination": destination,
+                "trip_id": trip_id,
+                "seats": request.POST.get("seats", 1),
+            },
+        )
+
+    data = form.cleaned_data
+
+    # A GET of the form (step 1) posts without confirm=1; only the second post
+    # actually books, so a refresh cannot double-book.
+    if request.POST.get("confirm") != "1":
+        option = _find_option(data)
+        return render(
+            request,
+            "bot/checkout.html",
+            {
+                "form": form,
+                "option": option,
+                "origin": Stop.objects.filter(pk=data["origin"]).first(),
+                "destination": Stop.objects.filter(pk=data["destination"]).first(),
+                "trip_id": data["trip_id"],
+                "seats": data["seats"],
+                "confirming": True,
+            },
+        )
+
+    profile = booking_service.get_or_create_profile(
+        data["whatsapp_number"], data["passenger_name"]
+    )
+    if request.user.is_authenticated and profile.user is None:
+        profile.user = request.user
+        profile.save(update_fields=["user"])
+
+    try:
+        booking = booking_service.create_booking(
+            profile=profile,
+            trip_id=data["trip_id"],
+            origin_id=data["origin"],
+            destination_id=data["destination"],
+            seats=data["seats"],
+            passenger_names=[data["passenger_name"]] * data["seats"],
+            channel=Booking.Channel.WEB,
+            user=request.user if request.user.is_authenticated else None,
+        )
+    except booking_service.SeatsUnavailable:
+        messages.error(request, "Those seats were just taken. Please pick another bus.")
+        return redirect("search")
+    except booking_service.BookingError as exc:
+        messages.error(request, str(exc))
+        return redirect("search")
+
+    return redirect("ticket", pnr=booking.pnr)
+
+
+def _find_option(data):
+    """Re-fetch the chosen departure so the confirm page shows a live fare."""
+    options = network.search_trips(
+        data["origin"],
+        data["destination"],
+        timezone.localdate(),
+        seats=data["seats"],
+        limit=50,
+    )
+    match = next((o for o in options if o.trip.id == data["trip_id"]), None)
+    if match:
+        return match
+    # The trip may be on a future date; search that date instead.
+    from bot.models import Trip
+
+    trip = Trip.objects.filter(pk=data["trip_id"]).first()
+    if not trip:
+        return None
+    options = network.search_trips(
+        data["origin"], data["destination"], trip.service_date, seats=data["seats"], limit=50
+    )
+    return next((o for o in options if o.trip.id == data["trip_id"]), None)
+
+
+def ticket(request, pnr):
+    booking = booking_service.lookup_by_pnr(pnr)
+    if booking is None:
+        raise Http404("No ticket with that PNR.")
+    return render(request, "bot/ticket.html", {"booking": booking})
+
+
+def ticket_qr(request, pnr):
+    """PNG QR of the ticket URL, embedded in the printable ticket."""
+    booking = booking_service.lookup_by_pnr(pnr)
+    if booking is None:
+        raise Http404("No ticket with that PNR.")
+
+    import qrcode
+
+    image = qrcode.make(request.build_absolute_uri(f"/ticket/{booking.pnr}/"))
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return HttpResponse(buffer.getvalue(), content_type="image/png")
+
+
+def pnr_lookup(request):
+    form = PNRLookupForm(request.GET or None)
+    booking = None
+    if form.is_valid():
+        booking = booking_service.lookup_by_pnr(form.cleaned_data["pnr"])
+        if booking is None:
+            messages.error(request, "No ticket found with that PNR.")
+    return render(request, "bot/pnr.html", {"form": form, "booking": booking})
+
+
 @login_required
+def my_tickets(request):
+    profile = getattr(request.user, "passenger_profile", None)
+    if profile:
+        # Query through the profile so chat bookings appear too.
+        bookings = (
+            Booking.objects.select_related("origin", "destination", "trip__route")
+            .filter(profile=profile)
+            .order_by("-created_at")
+        )
+    else:
+        bookings = (
+            Booking.objects.select_related("origin", "destination", "trip__route")
+            .filter(user=request.user)
+            .order_by("-created_at")
+        )
+    return render(request, "bot/my_tickets.html", {"bookings": bookings})
 
 
-def payment_view(request, booking_id):
-    # Fetch the logged-in user's username
-    username = request.user.username
+@login_required
+def cancel_ticket(request, pnr):
+    if request.method != "POST":
+        return redirect("my_tickets")
 
-    # Fetch the booking details for the logged-in user using the booking_id
+    booking = booking_service.lookup_by_pnr(pnr)
+    profile = getattr(request.user, "passenger_profile", None)
+    owns = booking and (
+        booking.user_id == request.user.id or (profile and booking.profile_id == profile.id)
+    )
+    if not owns:
+        messages.error(request, "That ticket isn't yours to cancel.")
+        return redirect("my_tickets")
+
     try:
-        booking = Booking.objects.get(id=booking_id, user=request.user)  # Ensure the booking belongs to the user
-        source = booking.route.source  # Accessing the source from the related Route
-        destination = booking.route.destination
-        # whatsapp_number = request.user.whatsapp_number
-        whatsapp_number = booking.whatsapp_number  # Accessing the destination from the related Route
-        print(booking)
-    except Booking.DoesNotExist:
-        return HttpResponse("No booking found. Please book a ticket first.")
+        booking_service.cancel_booking(booking)
+        messages.success(request, f"Ticket {booking.pnr} cancelled.")
+    except booking_service.BookingError as exc:
+        messages.error(request, str(exc))
+    return redirect("my_tickets")
 
-    # Generate the ticket with the current date and time
-    current_time = now().strftime("%Y-%m-%d %H:%M:%S")
-    ticket = (
-        f"Your Ticket:\n"
-        f"Username: {username}\n"
-        f"Source: {source}\n"
-        f"Destination: {destination}\n"
-        f"Booking ID: {booking_id}\n"
-        f"Date and Time: {current_time}"
+
+def routes(request):
+    all_routes = (
+        Route.objects.filter(is_active=True)
+        .prefetch_related("route_stops__stop")
+        .order_by("code")
     )
-    print(whatsapp_number)
-    # Send the ticket to WhatsApp via Twilio
-    
+    return render(request, "bot/routes.html", {"routes": all_routes})
 
-    return render(request, 'bot/payment.html',locals())
-    # return HttpResponse(f"Payment complete! Your ticket:\n\n{ticket}")
 
-def send_ticket_via_whatsapp(ticket,user_whatsapp_number):
-    # Use your Twilio Account SID and Auth Token
-    # 
-    client = Client(account_sid, auth_token)
-
-    # Send the ticket to the user (replace with actual user WhatsApp number)
-    message = client.messages.create(
-        body=ticket,
-        from_='whatsapp:+12185035494',  # Twilio sandbox number
-        to=f'whatsapp:{user_whatsapp_number}', # User's WhatsApp number
-    )
-
-@csrf_exempt
 def register(request):
-    # if request.method == 'POST':
-    #     form = UserCreationForm(request.POST)
-    #     if form.is_valid():
-    #         form.save()
-    #         return redirect('login')  # Redirect to login page after successful registration
-    # else:
-    #     form = UserCreationForm()
+    if request.user.is_authenticated:
+        return redirect("home")
 
-    # return render(request, 'bot/register.html')
-    if request.method== 'POST':
-       first_name=request.POST.get("first_name")
-       last_name=request.POST.get("last_name")
-       username=request.POST.get("username")
-       password=request.POST.get("password")
-    #    whatsapp_number=request.POST.get("whatsapp")
-       user=User.objects.filter(username=username)
-       if user.exists():
-          messages.info(request,"username already taken ")
-          return render(request, 'bot/register.html')
-       user = User.objects.create(
+    form = RegisterForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        number = form.cleaned_data.get("whatsapp_number")
+        if number:
+            profile = booking_service.get_or_create_profile(
+                number, user.get_full_name() or user.username
+            )
+            # Linking here makes any earlier chat bookings from this number
+            # show up in My Tickets immediately.
+            if profile.user is None:
+                profile.user = user
+                profile.save(update_fields=["user"])
+        login(request, user)
+        messages.success(request, "Welcome aboard!")
+        return redirect("home")
 
-    first_name=first_name,
-
-    last_name=last_name,
-
-    username=username,
-
-    # whatsapp_number=whatsapp_number,  # Ensure this matches the field name in your model
-
-)
-       user.set_password(password)
-       user.save()
-       messages.info(request,"successfully user created")
-       return render(request, 'bot/login.html')
-       
-    return render(request, 'bot/register.html')
-
-@csrf_exempt
-def login_view(request):
-    # if request.method == 'POST':
-    #     form = AuthenticationForm(data=request.POST)
-    #     if form.is_valid():
-    #         user = form.get_user()
-    #         login(request, user)
-    #         return redirect('booking')  # After login, redirect to booking page
-    # else:
-    #     form = AuthenticationForm()
-    print("POST method ke uper")
-    if request.method == 'POST':
-        print("POST method ke ander")
-        username=request.POST.get('username')
-        password=request.POST.get('login_password')
-        print(username,password)
-        if not User.objects.filter(username=username).exists():
-            messages.error(request,"invalid username")
-            return render(request, 'bot/login.html')
-        user=authenticate(username=username,password=password)
-        print("--------------------",user)
-        if user is None:
-            messages.error(request,"invalid password")
-            return render(request, 'bot/login.html')
-
-        else:
-            login(request,user)
-            return render(request, 'bot/index.html')
-
-    return render(request, 'bot/login.html')
+    return render(request, "bot/register.html", {"form": form})

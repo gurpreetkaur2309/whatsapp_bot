@@ -1,0 +1,63 @@
+{% extends "bot/base.html" %}
+{% block title %}Indore iBus — city bus tickets{% endblock %}
+
+{% block content %}
+<section class="hero py-5">
+  <div class="container py-4">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <h1 class="display-5 fw-bold mb-3">Book an Indore city bus ticket in seconds</h1>
+        <p class="lead mb-4">
+          BRTS iBus and city routes across Indore. Distance-based fares from ₹5.
+          Book here, or just message us on WhatsApp.
+        </p>
+        <a href="{% url 'search' %}" class="btn btn-light btn-lg fw-semibold me-2">Book a ticket</a>
+        <a href="{% url 'routes' %}" class="btn btn-outline-light btn-lg">See routes</a>
+      </div>
+      <div class="col-lg-5">
+        <div class="bg-white text-dark rounded-4 p-4 shadow-sm">
+          <h5 class="fw-bold mb-3">💬 Book on WhatsApp</h5>
+          <p class="small text-muted mb-2">Send <code>hi</code> to our number and reply with a few numbers:</p>
+          <pre class="small bg-light p-3 rounded mb-0">you › hi
+bot › 1 Book  2 My tickets
+      3 Cancel  4 Fare
+you › 1
+bot › Where are you boarding?
+you › palasia
+      …
+bot › ✅ PNR IB7K4Q2M</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container py-5">
+  <div class="row g-4 text-center">
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="display-6 text-ib fw-bold">{{ stop_count }}</div>
+          <div class="text-muted">bus stops</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="display-6 text-ib fw-bold">{{ route_count }}</div>
+          <div class="text-muted">route directions</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm">
+        <div class="card-body">
+          <div class="display-6 text-ib fw-bold">₹5–25</div>
+          <div class="text-muted">distance-based fare</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

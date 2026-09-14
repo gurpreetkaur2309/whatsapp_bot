@@ -1,0 +1,130 @@
+{% extends "bot/base.html" %}
+{% block title %}Book a ticket — Indore iBus{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h1 class="h3 mb-4">Book a ticket</h1>
+
+  <form method="get" action="{% url 'search' %}" class="card border-0 shadow-sm p-4 mb-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label for="origin" class="form-label">From</label>
+        <select name="origin" id="origin" class="form-select" required>
+          <option value="">Select boarding stop…</option>
+          {% for stop in stops %}
+            <option value="{{ stop.id }}" {% if origin and stop.id == origin.id %}selected{% endif %}>{{ stop.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label for="destination" class="form-label">To</label>
+        <select name="destination" id="destination" class="form-select" required>
+          <option value="">Select destination…</option>
+          {% for stop in stops %}
+            <option value="{{ stop.id }}" {% if destination and stop.id == destination.id %}selected{% endif %}>{{ stop.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label for="date" class="form-label">Date</label>
+        <input type="date" name="date" id="date" class="form-control"
+               value="{{ service_date|date:'Y-m-d'|default:today|date:'Y-m-d' }}"
+               min="{{ today|date:'Y-m-d' }}">
+      </div>
+      <div class="col-md-1">
+        <label for="seats" class="form-label">Seats</label>
+        <input type="number" name="seats" id="seats" class="form-control" min="1" max="6" value="{{ seats|default:1 }}">
+      </div>
+      <div class="col-md-1 d-grid">
+        <button class="btn btn-ib">Search</button>
+      </div>
+    </div>
+    <div id="fare-preview" class="small text-muted mt-3"></div>
+  </form>
+
+  {% if searched %}
+    {% if no_route %}
+      <div class="alert alert-warning">
+        <strong>No direct bus</strong> from {{ origin.name }} to {{ destination.name }}.
+        {% if suggestions %}
+          <div class="mt-2 small">From {{ origin.name }} you can reach:
+            {% for s in suggestions %}<span class="badge text-bg-light">{{ s.name }}</span> {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% elif not options %}
+      <div class="alert alert-info">
+        No more buses from <strong>{{ origin.name }}</strong> to <strong>{{ destination.name }}</strong>
+        on {{ service_date|date:"D d M Y" }}. Try another date.
+      </div>
+    {% else %}
+      <p class="text-muted">
+        {{ options|length }} bus{{ options|length|pluralize:"es" }} ·
+        {{ distance_km }} km · fare from ₹{{ fare|floatformat:0 }}
+      </p>
+      <div class="row g-3">
+        {% for option in options %}
+          <div class="col-md-6">
+            <div class="card card-trip border-0 shadow-sm h-100">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="h5 mb-1">{{ option.board_at|date:"g:i A" }}</div>
+                  <div class="small text-muted">
+                    {{ option.trip.route.code }} · {{ option.distance_km }} km
+                    {% if option.trip.bus %}· {{ option.trip.bus.registration }}{% endif %}
+                  </div>
+                  <div class="small {% if option.seats_left < 5 %}text-danger{% else %}text-success{% endif %}">
+                    {{ option.seats_left }} seat{{ option.seats_left|pluralize }} left
+                  </div>
+                </div>
+                <div class="text-end">
+                  <div class="h4 text-ib mb-2">₹{{ option.fare_per_seat|floatformat:0 }}</div>
+                  <form method="post" action="{% url 'checkout' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="trip_id" value="{{ option.trip.id }}">
+                    <input type="hidden" name="origin" value="{{ origin.id }}">
+                    <input type="hidden" name="destination" value="{{ destination.id }}">
+                    <input type="hidden" name="seats" value="{{ seats }}">
+                    <input type="hidden" name="passenger_name" value="{{ user.get_full_name|default:user.username }}">
+                    <input type="hidden" name="whatsapp_number" value="+910000000000">
+                    <button class="btn btn-ib btn-sm">Select</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live fare preview straight off the REST API.
+(function () {
+  const origin = document.getElementById('origin');
+  const destination = document.getElementById('destination');
+  const out = document.getElementById('fare-preview');
+
+  async function preview() {
+    if (!origin.value || !destination.value || origin.value === destination.value) {
+      out.textContent = '';
+      return;
+    }
+    try {
+      const res = await fetch(`/api/fare/?origin=${origin.value}&destination=${destination.value}`);
+      if (!res.ok) { out.textContent = 'No direct bus between those stops.'; return; }
+      const data = await res.json();
+      out.innerHTML = `Distance <strong>${data.distance_km} km</strong> · fare <strong>₹${Math.round(data.fare_per_seat)}</strong> per ticket`;
+    } catch (e) {
+      out.textContent = '';
+    }
+  }
+  origin.addEventListener('change', preview);
+  destination.addEventListener('change', preview);
+  preview();
+})();
+</script>
+{% endblock %}
