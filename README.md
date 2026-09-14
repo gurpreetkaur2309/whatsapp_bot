@@ -6,6 +6,32 @@ Django · Twilio · Ngrok · MySQL · REST API.
 The bot is a real conversational state machine — source → destination → date →
 bus → seats → confirm → PNR — not a link that bounces you to a website.
 
+---
+
+## 🎬 Demo
+
+[![Watch the demo](docs/demo-poster.svg)](docs/demo.webm)
+
+<video src="docs/demo.webm" controls muted playsinline width="720"
+       poster="docs/demo-poster.svg">
+  Your browser can't play embedded video —
+  <a href="docs/demo.webm">download the demo (6.7 MB, webm)</a>.
+</video>
+
+▶️ **[docs/demo.webm](docs/demo.webm)** — 6.7 MB. Click the poster above, or
+download the file and open it in any browser / VLC.
+
+> **Getting an inline player on GitHub:** GitHub won't stream a `.webm` from a
+> relative repo path — it serves it as a download. To get a real embedded
+> player, drag `docs/demo.webm` into any GitHub issue or release description;
+> GitHub uploads it and hands back a
+> `https://github.com/user-attachments/assets/…` URL. Paste that URL on its own
+> line here, replacing the `<video>` block above.
+
+---
+
+## The conversation
+
 ```
 you › hi
 bot › 🚌 Namaste! Welcome to Indore iBus
@@ -77,6 +103,9 @@ bot/
   data/indore_network.py the authored Indore network
   management/commands/   seed_network · generate_trips · chat · expire_bookings
   tests/                 98 tests
+docs/
+  demo.webm              the demo recording
+  demo-poster.svg        poster card for the README
 ```
 
 `services/booking.py` is called identically by the bot, the website and the API,
