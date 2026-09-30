@@ -54,6 +54,16 @@ bot › ✅ Ticket confirmed!  PNR: IBVW672D
 
 ---
 
+## Deployment
+
+Deploys to **Vercel** — which also replaces ngrok with a permanent HTTPS webhook
+URL for Twilio. SQLite cannot come along (Vercel's filesystem is read-only), so
+a hosted MySQL is required.
+
+**→ Full steps in [DEPLOY.md](DEPLOY.md)**
+
+---
+
 ## Quick start
 
 ```bash

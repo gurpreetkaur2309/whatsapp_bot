@@ -5,9 +5,15 @@ use, so fare and seat logic exists in exactly one place.
 """
 
 import datetime as dt
+import hmac
 import io
+from io import StringIO
 
+from django.conf import settings
 from django.contrib import messages
+from django.core.management import call_command
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
@@ -285,3 +291,45 @@ def register(request):
         return redirect("home")
 
     return render(request, "bot/register.html", {"form": form})
+
+
+# ---------------------------------------------------------------------------
+# Scheduled maintenance
+# ---------------------------------------------------------------------------
+
+
+@csrf_exempt
+def rollover(request):
+    """Top up future trips and release stale seat holds.
+
+    Serverless hosts give you no shell, so the work that would otherwise be a
+    cron'd `manage.py` call is exposed as an endpoint. Vercel Cron hits this on
+    a schedule (see vercel.json) and sends `Authorization: Bearer $CRON_SECRET`.
+
+    Rejects the request unless the secret matches, so it can't be triggered by
+    anyone who finds the URL.
+    """
+    secret = getattr(settings, "CRON_SECRET", "")
+    if not secret:
+        return JsonResponse({"detail": "CRON_SECRET is not configured."}, status=503)
+
+    presented = request.headers.get("Authorization", "")
+    expected = f"Bearer {secret}"
+    # Constant-time compare: a plain == leaks the secret a byte at a time.
+    if not hmac.compare_digest(presented, expected):
+        return JsonResponse({"detail": "Forbidden."}, status=403)
+
+    days = int(request.GET.get("days", 7))
+    out = StringIO()
+    call_command("generate_trips", days=days, purge_past=True, stdout=out)
+    expired = booking_service.expire_stale_pending()
+    sessions = booking_service.expire_stale_sessions()
+
+    return JsonResponse(
+        {
+            "ok": True,
+            "trips": out.getvalue().strip(),
+            "expired_bookings": expired,
+            "reset_sessions": sessions,
+        }
+    )

@@ -22,4 +22,7 @@ urlpatterns = [
 
     # Twilio posts here. CSRF-exempt, but signature-validated.
     path("webhook/whatsapp/", whatsapp_webhook, name="whatsapp_webhook"),
+
+    # Vercel Cron target. Requires Authorization: Bearer $CRON_SECRET.
+    path("tasks/rollover/", views.rollover, name="rollover"),
 ]

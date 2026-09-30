@@ -305,3 +305,27 @@ class WebhookSignatureTests(TestCase):
             "/webhook/whatsapp/", {"From": "whatsapp:+911", "Body": "hi", "MessageSid": "S1"}
         )
         self.assertEqual(response.status_code, 403)
+
+
+@override_settings(CRON_SECRET="test-cron-secret")
+class RolloverEndpointTests(TestCase):
+    URL = "/tasks/rollover/"
+
+    def test_missing_secret_is_forbidden(self):
+        self.assertEqual(self.client.post(self.URL).status_code, 403)
+
+    def test_wrong_secret_is_forbidden(self):
+        response = self.client.post(self.URL, HTTP_AUTHORIZATION="Bearer nope")
+        self.assertEqual(response.status_code, 403)
+
+    def test_correct_secret_runs_maintenance(self):
+        response = self.client.post(
+            self.URL, HTTP_AUTHORIZATION="Bearer test-cron-secret"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["ok"])
+
+    @override_settings(CRON_SECRET="")
+    def test_unconfigured_secret_refuses_rather_than_running_open(self):
+        response = self.client.post(self.URL, HTTP_AUTHORIZATION="Bearer anything")
+        self.assertEqual(response.status_code, 503)

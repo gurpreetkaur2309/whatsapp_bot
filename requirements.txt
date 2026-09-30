@@ -10,11 +10,16 @@ twilio==9.11.1
 qrcode==8.2
 pillow==12.3.0
 
-# Phone numbers
-django-phonenumber-field==8.5.0
-phonenumbers==9.0.38
-
 # MySQL driver.
 # Needs system packages first:
 #   sudo apt install pkg-config default-libmysqlclient-dev build-essential
 # mysqlclient==2.2.7
+
+# Deployment (serverless / Vercel)
+whitenoise==6.12.0
+
+# --- Database drivers: install the one matching your DATABASE_URL ---
+# Postgres (Neon, Supabase, Render):
+psycopg[binary]==3.3.6
+# MySQL (Aiven, TiDB, Railway) — pure Python, no compiler needed:
+PyMySQL==1.2.3

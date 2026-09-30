@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.py[cod]
+.env
+db.sqlite3
+db.sqlite3.bak
+staticfiles/
+# 6.7 MB demo video — keep it in git, out of the deployment bundle.
+docs/
+bot/static/bot/Logis/
+bot/tests/
+.git/
