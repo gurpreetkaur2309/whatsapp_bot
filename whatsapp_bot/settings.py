@@ -8,6 +8,7 @@ Nothing secret is hardcoded here.
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -135,6 +136,23 @@ WSGI_APPLICATION = "whatsapp_bot.wsgi.application"
 # --------------------------------------------------------------------------
 
 DATABASE_URL = env("DATABASE_URL", default="")
+
+# Running on a serverless host? Vercel always sets VERCEL=1.
+IS_SERVERLESS = bool(env("VERCEL", default="")) or bool(env("AWS_LAMBDA_FUNCTION_NAME", default=""))
+
+if IS_SERVERLESS and not DATABASE_URL:
+    # Falling back to SQLite here "works" until the first query, then fails
+    # with "unable to open database file" — a read-only-filesystem error that
+    # says nothing about the actual mistake. Fail at startup with the cause.
+    raise ImproperlyConfigured(
+        "DATABASE_URL is not set on this deployment, so Django would fall back "
+        "to SQLite — which cannot work on a read-only serverless filesystem.\n\n"
+        "On Vercel: Settings -> Environment Variables -> add DATABASE_URL and "
+        "tick ALL THREE environments (Production, Preview, Development). A "
+        "branch URL such as my-app-git-main-*.vercel.app is a PREVIEW "
+        "deployment, so a Production-only variable will not be visible to it.\n"
+        "Environment variables only apply to NEW builds: redeploy after saving."
+    )
 
 if DATABASE_URL:
     DATABASES = {"default": env.db_url("DATABASE_URL")}
